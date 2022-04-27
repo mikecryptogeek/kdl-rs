@@ -146,15 +146,17 @@ fn plain_identifier(input: &str) -> IResult<&str, KdlIdentifier, KdlParseError<&
         cut(take_while(KdlIdentifier::is_identifier_char)),
     ))(input).map_err(|e| set_details(e, start, Some("invalid identifier character"), Some("See https://github.com/kdl-org/kdl/blob/main/SPEC.md#identifier for an explanation of valid KDL identifiers.")))?;
     match name {
-        "false" | "true" | "null" => return Err(nom::Err::Error(KdlParseError {
-            input,
-            context: Some("non-keyword identifier"),
-            len: name.len(),
-            label: Some("reserved keyword"),
-            help: Some("Reserved keywords cannot be used as identifiers."),
-            kind: None,
-            touched: false,
-        })),
+        "false" | "true" | "null" => {
+            return Err(nom::Err::Error(KdlParseError {
+                input,
+                context: Some("non-keyword identifier"),
+                len: name.len(),
+                label: Some("reserved keyword"),
+                help: Some("Reserved keywords cannot be used as identifiers."),
+                kind: None,
+                touched: false,
+            }))
+        }
         _ => {}
     }
     let mut ident = KdlIdentifier::from(name);

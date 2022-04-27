@@ -14,7 +14,10 @@ fn spec_compliance() -> miette::Result<()> {
         .join("input");
     for test_name in fs::read_dir(&input).into_diagnostic()? {
         let test_path = test_name.into_diagnostic()?.path();
-        println!("parsing {}:", PathBuf::from(test_path.file_name().unwrap()).display());
+        println!(
+            "parsing {}:",
+            PathBuf::from(test_path.file_name().unwrap()).display()
+        );
         let src = fs::read_to_string(&test_path).into_diagnostic()?;
         println!("src: {}", src);
         let res: Result<KdlDocument, KdlError> = src.parse();
