@@ -34,7 +34,8 @@ fn validate_res(res: Result<KdlDocument, KdlError>, path: &Path) -> miette::Resu
         let doc = res?;
         let stringified = stringify_to_expected(doc);
         let expected = fs::read_to_string(&expected_path).into_diagnostic()?;
-        assert_eq!(stringified, expected);
+        println!("{}", stringified);
+        assert_eq!(stringified, format!("{}\n", expected.trim()));
     } else {
         assert!(res.is_err());
     }

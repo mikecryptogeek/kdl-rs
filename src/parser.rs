@@ -430,6 +430,7 @@ fn escape(input: &str) -> IResult<&str, char, KdlParseError<&str>> {
 }
 
 fn unicode(input: &str) -> IResult<&str, char, KdlParseError<&str>> {
+    // TODO: This should only accept up to 0x10FFFF.
     map_opt(
         map_res(
             take_while_m_n(1, 6, |c: char| c.is_ascii_hexdigit()),
