@@ -4,7 +4,7 @@ use crate::nom_compat::{many0, many1, many_till};
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_until, take_while, take_while_m_n};
 use nom::character::complete::{anychar, char, none_of, one_of};
-use nom::combinator::{all_consuming, cut, eof, map, map_opt, map_res, opt, recognize, peek};
+use nom::combinator::{all_consuming, cut, eof, map, map_opt, map_res, opt, peek, recognize};
 use nom::error::{context, ParseError};
 use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{Finish, IResult, Offset, Parser, Slice};
