@@ -51,6 +51,7 @@ fn validate_res(res: Result<KdlDocument, KdlError>, path: &Path) -> miette::Resu
 fn stringify_to_expected(mut doc: KdlDocument) -> String {
     doc.fmt_no_comments();
     normalize_numbers(&mut doc);
+    normalize_strings(&mut doc);
     remove_empty_children(&mut doc);
     doc.to_string()
 }
@@ -64,6 +65,19 @@ fn normalize_numbers(doc: &mut KdlDocument) {
         }
         if let Some(children) = node.children_mut() {
             normalize_numbers(children);
+        }
+    }
+}
+
+fn normalize_strings(doc: &mut KdlDocument) {
+    for node in doc.nodes_mut() {
+        for entry in node.entries_mut() {
+            if let Some(value) = entry.value().as_string() {
+                *entry.value_mut() = KdlValue::String(value.to_string());
+            }
+        }
+        if let Some(children) = node.children_mut() {
+            normalize_strings(children);
         }
     }
 }
