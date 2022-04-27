@@ -109,7 +109,7 @@ pub(crate) fn node(input: &str) -> IResult<&str, KdlNode, KdlParseError<&str>> {
 }
 
 pub(crate) fn identifier(input: &str) -> IResult<&str, KdlIdentifier, KdlParseError<&str>> {
-    alt((plain_identifier, quoted_identifier))(input)
+    alt((quoted_identifier, plain_identifier))(input)
 }
 
 pub(crate) fn leading_comments(input: &str) -> IResult<&str, Vec<&str>, KdlParseError<&str>> {
@@ -165,7 +165,7 @@ fn plain_identifier(input: &str) -> IResult<&str, KdlIdentifier, KdlParseError<&
 }
 
 fn quoted_identifier(input: &str) -> IResult<&str, KdlIdentifier, KdlParseError<&str>> {
-    let (input, (raw, val)) = string(input)?;
+    let (input, (raw, val)) = alt((string, raw_string))(input)?;
     let mut ident = KdlIdentifier::from(val.as_string().unwrap());
     ident.set_repr(raw);
     Ok((input, ident))
