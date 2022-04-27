@@ -340,7 +340,12 @@ impl KdlNode {
 
     /// Auto-formats this node and its contents.
     pub fn fmt(&mut self) {
-        self.fmt_impl(0);
+        self.fmt_impl(0, false);
+    }
+
+    /// Auto-formats this node and its contents, stripping comments.
+    pub fn fmt_no_comments(&mut self) {
+        self.fmt_impl(0, true);
     }
 }
 
@@ -421,12 +426,12 @@ impl Display for KdlNode {
 }
 
 impl KdlNode {
-    pub(crate) fn fmt_impl(&mut self, indent: usize) {
+    pub(crate) fn fmt_impl(&mut self, indent: usize, no_comments: bool) {
         if let Some(s) = self.leading.as_mut() {
-            crate::fmt::fmt_leading(s, indent);
+            crate::fmt::fmt_leading(s, indent, no_comments);
         }
         if let Some(s) = self.trailing.as_mut() {
-            crate::fmt::fmt_trailing(s);
+            crate::fmt::fmt_trailing(s, no_comments);
             if s.starts_with(';') {
                 s.remove(0);
             }
@@ -446,7 +451,7 @@ impl KdlNode {
             entry.fmt();
         }
         if let Some(children) = self.children.as_mut() {
-            children.fmt_impl(indent + 4);
+            children.fmt_impl(indent + 4, no_comments);
             if let Some(leading) = children.leading.as_mut() {
                 leading.push('\n');
             }

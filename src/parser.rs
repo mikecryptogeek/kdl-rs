@@ -145,6 +145,18 @@ fn plain_identifier(input: &str) -> IResult<&str, KdlIdentifier, KdlParseError<&
         take_while_m_n(1, 1, KdlIdentifier::is_initial_char),
         cut(take_while(KdlIdentifier::is_identifier_char)),
     ))(input).map_err(|e| set_details(e, start, Some("invalid identifier character"), Some("See https://github.com/kdl-org/kdl/blob/main/SPEC.md#identifier for an explanation of valid KDL identifiers.")))?;
+    match name {
+        "false" | "true" | "null" => return Err(nom::Err::Error(KdlParseError {
+            input,
+            context: Some("non-keyword identifier"),
+            len: name.len(),
+            label: Some("reserved keyword"),
+            help: Some("Reserved keywords cannot be used as identifiers."),
+            kind: None,
+            touched: false,
+        })),
+        _ => {}
+    }
     let mut ident = KdlIdentifier::from(name);
     ident.set_repr(name);
     Ok((input, ident))
@@ -158,8 +170,7 @@ fn quoted_identifier(input: &str) -> IResult<&str, KdlIdentifier, KdlParseError<
 }
 
 pub(crate) fn entry_with_node_space(input: &str) -> IResult<&str, KdlEntry, KdlParseError<&str>> {
-    let (input, leading) = recognize(many0(node_space))(input)?;
-    let leading = if leading.is_empty() { " " } else { leading };
+    let (input, leading) = recognize(many1(node_space))(input)?;
     let (input, mut entry) = entry(input)?;
     let (input, trailing) = recognize(many0(node_space))(input)?;
     entry.set_leading(leading);
@@ -168,14 +179,17 @@ pub(crate) fn entry_with_node_space(input: &str) -> IResult<&str, KdlEntry, KdlP
 }
 
 fn entry(input: &str) -> IResult<&str, KdlEntry, KdlParseError<&str>> {
-    alt((property, argument))(input)
+    let (input, leading) = recognize(many1(node_space))(input)?;
+    let (input, mut entry) = alt((property, argument))(input)?;
+    entry.set_leading(leading);
+    Ok((input, entry))
 }
 
 fn property(input: &str) -> IResult<&str, KdlEntry, KdlParseError<&str>> {
     let (input, leading) = recognize(many0(node_space))(input)?;
-    let (input, ty) = opt(annotation)(input)?;
     let (input, name) = identifier(input)?;
     let (input, _) = context("'=' after property name", tag("="))(input)?;
+    let (input, ty) = opt(annotation)(input)?;
     let (input, (raw, value)) = context("property value", cut(value))(input).map_err(|e| set_details(e, input, Some("invalid value"), Some("Please refer to https://github.com/kdl-org/kdl/blob/main/SPEC.md#value for valid KDL value syntaxes.")))?;
     let mut entry = KdlEntry::new_prop(name, value);
     entry.ty = ty;
@@ -529,6 +543,7 @@ fn hexadecimal(input: &str) -> IResult<&str, (String, KdlValue), KdlParseError<&
         )),
         move |(raw_body, hex): (&str, &str)| {
             raw.push_str(raw_body);
+            // TODO: Failure in case of int overflow!
             i64::from_str_radix(&str::replace(hex, "_", ""), 16)
                 .map(|x| x * sign)
                 .map(|x| (raw.clone(), KdlValue::Base16(x)))
@@ -753,6 +768,8 @@ mod value_tests {
                 )
             ))
         );
+        let (_, n) = node("node 0x0123_4567_89ab_cdef").expect("failed to parse node");
+        assert_eq!(&n[0], &KdlValue::Base16(0x0123456789abcdef));
         assert_eq!(
             value("0x123_4567"),
             Ok(("", ("0x123_4567".into(), KdlValue::Base16(0x1234567))))

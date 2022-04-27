@@ -124,11 +124,11 @@ impl Display for KdlEntry {
         if let Some(leading) = &self.leading {
             write!(f, "{}", leading)?;
         }
-        if let Some(ty) = &self.ty {
-            write!(f, "({})", ty)?;
-        }
         if let Some(name) = &self.name {
             write!(f, "{}=", name)?;
+        }
+        if let Some(ty) = &self.ty {
+            write!(f, "({})", ty)?;
         }
         if let Some(repr) = &self.value_repr {
             write!(f, "{}", repr)?;
