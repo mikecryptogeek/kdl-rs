@@ -2,9 +2,9 @@ use std::ops::RangeTo;
 
 use crate::nom_compat::{many0, many1, many_till};
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_until, take_until1, take_while, take_while_m_n};
+use nom::bytes::complete::{tag, take_until, take_while, take_while_m_n};
 use nom::character::complete::{anychar, char, none_of, one_of};
-use nom::combinator::{all_consuming, cut, eof, map, map_opt, map_res, opt, recognize};
+use nom::combinator::{all_consuming, cut, eof, map, map_opt, map_res, opt, recognize, peek};
 use nom::error::{context, ParseError};
 use nom::sequence::{delimited, preceded, terminated, tuple};
 use nom::{Finish, IResult, Offset, Parser, Slice};
@@ -345,7 +345,7 @@ fn multi_line_comment(input: &str) -> IResult<&str, &str, KdlParseError<&str>> {
         tag("/*"),
         context("comment block body", cut(commented_block)),
     ))(input)
-    .map_err(|e| set_details(e, input, Some("comment"), None))
+    .map_err(|e| set_details(e, input, Some("comment"), Some("multi-line comments must start with /* and be terminated with a matching */. They may be nested, but their */ must match.")))
 }
 
 /// `commented-block := '*/' | (multi-line-comment | '*' | '/' | [^*/]+) commented-block`
@@ -353,7 +353,12 @@ fn commented_block(input: &str) -> IResult<&str, &str, KdlParseError<&str>> {
     alt((
         tag("*/"),
         terminated(
-            alt((multi_line_comment, take_until1("*/"), tag("*"), tag("/"))),
+            alt((
+                multi_line_comment,
+                tag("*"),
+                tag("/"),
+                recognize(many_till(anychar, peek(alt((tag("*"), tag("/")))))),
+            )),
             commented_block,
         ),
     ))(input)
@@ -682,6 +687,10 @@ mod comment_tests {
     #[test]
     fn multi_line() {
         assert_eq!(comment("/* Hello world */"), Ok(("", "/* Hello world */")));
+        assert_eq!(
+            comment("/* Hello /* world */ blah */"),
+            Ok(("", "/* Hello /* world */ blah */"))
+        );
     }
 
     #[test]
