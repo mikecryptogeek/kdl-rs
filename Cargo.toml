@@ -11,6 +11,6 @@ keywords = ["kdl", "document", "serialization", "config"]
 edition = "2021"
 
 [dependencies]
-miette = { version = "4.6.0", features = ["fancy-no-backtrace"] }
+miette = "4.6.0"
 nom = { version = "7.1.1", default-features = false }
 thiserror = "1.0.30"
